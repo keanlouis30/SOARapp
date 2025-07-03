@@ -2,8 +2,8 @@
 
 import requests
 import json
-from . import config  # Relative import for config.py
-from .logging_utils import log_message  # Relative import for logging_utils.py
+import config 
+from logging_utils import log_message 
 
 
 def apply_flow_rule(ip_address, flow_type, node_id="openflow:1"):

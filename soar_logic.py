@@ -1,5 +1,7 @@
 #  Contains the core decision-making logic for what action to take based on the parsed alert.
 
+from logging_utils import log_message
+
 def extract_relevant_data(alert):
     ip_to_block = None
     flow_type = None
