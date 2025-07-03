@@ -1,0 +1,1 @@
+# The main script that Wazuh executes, orchestrating calls to the other modules.

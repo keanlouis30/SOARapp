@@ -1,0 +1,1 @@
+# Handles parsing the incoming JSON alert from Wazuh.
