@@ -20,6 +20,8 @@ sudo sh get-docker.sh
   	-e RABBITMQ_DEFAULT_USER=user \
   	-e RABBITMQ_DEFAULT_PASS=password \
   	rabbitmq:3-management
+or
+docker start thesis-rmq (if already command run already used before)
 
 ### Install Intellij IDEA community edition
 https://www.jetbrains.com/idea/download/?section=windows
