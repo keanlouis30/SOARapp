@@ -1,0 +1,21 @@
+# WARP.md contains project-specific AI guidance and should not be committed
+WARP.md
+
+# Maven build artifacts
+target/
+*.jar
+*.war
+*.ear
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.eclipse/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
