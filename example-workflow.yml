@@ -1,0 +1,30 @@
+name: "Basic NIDS Alert Response"
+version: 1.0
+description: >
+  This workflow demonstrates basic automated response to NIDS alerts.
+  It triggers on high-severity NIDS alerts and publishes a mitigation command.
+
+trigger:
+  event_type: "NIDS_ALERT"
+  condition: "{{ trigger.data.signatureSeverity == '1' }}"
+
+steps:
+  - name: "Log High Severity Alert"
+    action:
+      type: "PUBLISH_EVENT"
+      event:
+        type: "ALERT_LOGGED"
+        data:
+          severity: "{{ trigger.data.signatureSeverity }}"
+          source: "{{ trigger.data.sourceIp }}"
+          signature: "{{ trigger.data.signature }}"
+          
+  - name: "Initiate Automated Quarantine"
+    action:
+      type: "PUBLISH_EVENT"
+      event:
+        type: "INITIATE_MITIGATION"
+        data:
+          targetHost: "{{ trigger.data.sourceIp }}"
+          action: "QUARANTINE"
+          justification: "Automated quarantine due to high-severity NIDS alert"
