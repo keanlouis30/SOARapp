@@ -1,0 +1,4 @@
+com\yourorg\middleware\DatabaseUtil.class
+com\yourorg\middleware\WazuhAlertDao.class
+com\yourorg\middleware\WazuhAlert.class
+com\yourorg\middleware\DbDemo.class
