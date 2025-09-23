@@ -895,11 +895,11 @@ This SDK provides a robust foundation for building security middleware component
 ### User-Defined Module Checklist
 Before deploying your custom security integrations, ensure:
 
-✅ **Directory Structure**: Module is located in `nis1-thesis-udm/src/main/java/com/nis1/thesis/udm/`  
-✅ **Naming Convention**: File follows `*Module.java` pattern  
-✅ **Package Declaration**: Uses `package com.nis1.thesis.udm;`  
-✅ **Interface Implementation**: Implements `PluggableModule` interface  
-✅ **Standardized Messages**: Uses the standardized JSON message format  
-✅ **Resource Management**: Proper initialization and shutdown lifecycle  
+**Directory Structure**: Module is located in `nis1-thesis-udm/src/main/java/com/nis1/thesis/udm/`  
+**Naming Convention**: File follows `*Module.java` pattern  
+**Package Declaration**: Uses `package com.nis1.thesis.udm;`  
+**Interface Implementation**: Implements `PluggableModule` interface  
+**Standardized Messages**: Uses the standardized JSON message format  
+**Resource Management**: Proper initialization and shutdown lifecycle  
 
 For additional support and examples, refer to the complete `WazuhModule.java` implementation in the `nis1-thesis-udm` directory and the SDK documentation.
