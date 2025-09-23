@@ -53,6 +53,12 @@ public class MainApp {
         // Load built-in example modules
         loadExampleModules(api);
         
+        // Load external modules from JAR files
+        System.out.println("[MainApp] Loading external modules from JAR files...");
+        moduleManager.loadModulesFromDirectory();
+        System.out.println("[MainApp] External module loading complete. Total modules loaded by manager: " 
+            + moduleManager.getModuleCount());
+        
         System.out.println("=== SOAR Framework Started ===");
         System.out.println("System is now running and processing events...");
         System.out.println("Press Ctrl+C to shutdown");
