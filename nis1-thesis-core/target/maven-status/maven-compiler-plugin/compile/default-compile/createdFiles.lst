@@ -1,3 +1,5 @@
+com/nis1/thesis/core/StandardizedEventMessage.class
 com/nis1/thesis/core/CoreSystemApiImpl.class
+com/nis1/thesis/core/JsonMessagePublisher.class
 com/nis1/thesis/core/TestPublisherModule.class
 com/nis1/thesis/core/MainApp.class
