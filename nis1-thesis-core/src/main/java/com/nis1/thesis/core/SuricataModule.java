@@ -1,9 +1,12 @@
 package com.nis1.thesis.core;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import com.nis1.thesis.sdk.*;
 import java.nio.file.*;
 import java.io.IOException;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -42,7 +45,7 @@ public class SuricataModule implements PluggableModule {
 
     /**
      * Returns the name of this Suricata integration module.
-     * 
+     *
      * @return The module name for identification and logging purposes
      */
     @Override
@@ -57,7 +60,7 @@ public class SuricataModule implements PluggableModule {
      * and starts the simulated alert generation process. In a production implementation,
      * this would set up file monitoring for Suricata's eve.json log file.
      * </p>
-     * 
+     *
      * @param api The core system API for event publishing and subscription
      */
     @Override
@@ -72,6 +75,25 @@ public class SuricataModule implements PluggableModule {
         // In a real implementation, we would tail the actual eve.json log file
         // For this proof-of-concept, we'll simulate reading alerts
         startSimulatedAlertGeneration();
+
+        // This will be the line for the real implementation testing
+        // Instructions ----------------------------------
+        // guide link to full installation, setup, and testing - https://www.youtube.com/watch?v=uXNhwduQve8
+        // REQUIRED: suricata should be installed, setup, and running
+        // To test if it runs
+        // sudo systemctl status suricata.service - this should show Active: active (running) and not Active: failed
+        // To test if it works
+        // curl http://testmynids.org/uid/index.html - generates a test alert
+        // cat /var/log/suricata/fast.log -there should be the content of the test alert here
+
+        // REQUIRED: enable user to have access to the directory /var/log/suricata and eve.json for this to work since root only has initial access (in my case)
+        // TODO
+        // sudo usermod -aG suricata [user]
+        // sudo chmod g+r /var/log/suricata/eve.json
+        // newgrp suricata
+        // then restart machine for changes to apply
+
+        //startRealAlertIngestion("/var/log/suricata/eve.json");
 
         helper.log(getName(), "INFO", "Suricata NIDS module initialized successfully");
     }
@@ -96,7 +118,7 @@ public class SuricataModule implements PluggableModule {
                 try {
                     // Simulate periodic alert generation
                     Thread.sleep(10000); // 10 seconds between simulated alerts
-                    
+
                     if (running) {
                         generateSimulatedAlert(++alertCount);
                     }
@@ -122,32 +144,32 @@ public class SuricataModule implements PluggableModule {
      * Alert types include malware detection, attack responses, trojan activity,
      * and port scans, with varying severity levels to demonstrate prioritization.
      * </p>
-     * 
+     *
      * @param alertNumber The sequential number of this alert for cycling through types
      */
     private void generateSimulatedAlert(int alertNumber) {
         try {
             // Create different types of simulated alerts
             String[] signatures = {
-                "ET MALWARE Suspicious DNS Query",
-                "GPL ATTACK_RESPONSE directory listing",
-                "ET TROJAN Win32.Ransomware Activity",
-                "ET SCAN Port Scan Detected"
+                    "ET MALWARE Suspicious DNS Query",
+                    "GPL ATTACK_RESPONSE directory listing",
+                    "ET TROJAN Win32.Ransomware Activity",
+                    "ET SCAN Port Scan Detected"
             };
-            
+
             String[] sourceIps = {"192.168.1.100", "10.0.0.45", "172.16.0.23", "192.168.1.89"};
             String[] severities = {"1", "2", "3", "1"}; // 1 = high, 2 = medium, 3 = low
-            
+
             int index = (alertNumber - 1) % signatures.length;
-            
+
             // Create NIDS alert data
             NidsAlertData alertData = new NidsAlertData(
-                sourceIps[index],
-                "192.168.1.1", // destination IP (gateway)
-                signatures[index],
-                severities[index]
+                    sourceIps[index],
+                    "192.168.1.1", // destination IP (gateway)
+                    signatures[index],
+                    severities[index]
             );
-            
+
             // Set additional fields
             alertData.setProtocol("TCP");
             alertData.setSourcePort(generateRandomPort());
@@ -156,15 +178,15 @@ public class SuricataModule implements PluggableModule {
 
             // Use the helper to publish the alert
             helper.publishNidsAlert(
-                alertData.getSourceIp(),
-                alertData.getDestinationIp(),
-                alertData.getSignature(),
-                alertData.getSignatureSeverity()
+                    alertData.getSourceIp(),
+                    alertData.getDestinationIp(),
+                    alertData.getSignature(),
+                    alertData.getSignatureSeverity()
             );
 
-            helper.log(getName(), "INFO", 
-                String.format("Generated NIDS alert #%d: %s from %s (severity: %s)", 
-                    alertNumber, signatures[index], sourceIps[index], severities[index]));
+            helper.log(getName(), "INFO",
+                    String.format("Generated NIDS alert #%d: %s from %s (severity: %s)",
+                            alertNumber, signatures[index], sourceIps[index], severities[index]));
 
         } catch (Exception e) {
             helper.log(getName(), "ERROR", "Failed to generate simulated alert: " + e.getMessage());
@@ -177,12 +199,61 @@ public class SuricataModule implements PluggableModule {
      * Returns a random port number in the dynamic/private port range (1024-65535)
      * to simulate realistic network traffic patterns in the generated alerts.
      * </p>
-     * 
+     *
      * @return A random port number between 1024 and 65535
      */
     private int generateRandomPort() {
-        return 1024 + (int)(Math.random() * 64511); // Random port between 1024-65535
+        return 1024 + (int) (Math.random() * 64511); // Random port between 1024-65535
     }
+
+    /**
+     * Starts ingestion of real Suricata eve.json alerts.
+     * <p>
+     * Uses Java WatchService to monitor changes to eve.json and parse
+     * newly appended lines. Each "alert" event is converted into a
+     * standardized NIDS_ALERT to be published.
+     * </p>
+     *
+     * @param eveFilePath Path to Suricata's eve.json file
+     */
+    private void startRealAlertIngestion(String eveFilePath) {
+        executor.submit(() -> {
+            Path evePath = Paths.get(eveFilePath);
+            Path dir = evePath.getParent();
+
+            try (WatchService watchService = FileSystems.getDefault().newWatchService()) {
+                dir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+
+                // Start reading eve.json from the end (tail-like behavior)
+                long filePointer = Files.size(evePath);
+
+                while (running && !Thread.currentThread().isInterrupted()) {
+                    WatchKey key = watchService.take();
+                    for (WatchEvent<?> event : key.pollEvents()) {
+                        Path changed = (Path) event.context();
+                        if (changed.endsWith(evePath.getFileName())) {
+                            long newSize = Files.size(evePath);
+                            if (newSize > filePointer) {
+                                try (var reader = Files.newBufferedReader(evePath)) {
+                                    reader.skip(filePointer); // jump to where we left off
+                                    String line;
+                                    while ((line = reader.readLine()) != null) {
+                                        parseEveJsonLine(line);
+                                    }
+                                }
+                                filePointer = newSize;
+                            }
+                        }
+                    }
+                    key.reset();
+                }
+            } catch (IOException | InterruptedException e) {
+                helper.log(getName(), "ERROR", "Error monitoring eve.json: " + e.getMessage());
+                Thread.currentThread().interrupt();
+            }
+        });
+    }
+
 
     /**
      * Template method for parsing actual Suricata eve.json log entries.
@@ -197,7 +268,7 @@ public class SuricataModule implements PluggableModule {
      * new line detected in the Suricata eve.json log file through file
      * monitoring mechanisms.
      * </p>
-     * 
+     *
      * @param jsonLine A single JSON line from the Suricata eve.json log file
      */
     @SuppressWarnings("unused")
@@ -205,20 +276,34 @@ public class SuricataModule implements PluggableModule {
         try {
             // Example of how real Suricata eve.json parsing would work
             SuricataEveLog eveLog = gson.fromJson(jsonLine, SuricataEveLog.class);
-            
+
             if ("alert".equals(eveLog.eventType)) {
                 NidsAlertData alertData = new NidsAlertData(
-                    eveLog.srcIp,
-                    eveLog.destIp,
-                    eveLog.alert != null ? eveLog.alert.signature : "Unknown",
-                    eveLog.alert != null ? String.valueOf(eveLog.alert.severity) : "3"
+                        eveLog.srcIp,
+                        eveLog.destIp,
+                        eveLog.alert != null ? eveLog.alert.signature : "Unknown",
+                        eveLog.alert != null ? String.valueOf(eveLog.alert.severity) : "3"
                 );
-                
+
                 // Publish the standardized NIDS alert
                 Event<NidsAlertData> event = Event.of("NIDS_ALERT", alertData);
                 api.publishEvent(event);
-                
-                helper.log(getName(), "INFO", "Published NIDS alert: " + eveLog.alert.signature);
+
+                DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ");
+                OffsetDateTime odt = OffsetDateTime.parse(eveLog.timestamp, inputFormatter);
+                String formattedTimestamp = odt.format(inputFormatter);
+
+                String logMessage = String.format("%s - Published NIDS alert: %s [Priority: %d] {%s} %s:%d -> %s:%d",
+                        formattedTimestamp,
+                        eveLog.alert.signature,
+                        eveLog.alert.severity,
+                        eveLog.proto,
+                        eveLog.srcIp,
+                        eveLog.srcPort,
+                        eveLog.destIp,
+                        eveLog.destPort);
+
+                helper.log(getName(), "INFO", logMessage);
             }
         } catch (Exception e) {
             helper.log(getName(), "ERROR", "Failed to parse eve.json line: " + e.getMessage());
@@ -237,22 +322,33 @@ public class SuricataModule implements PluggableModule {
     public void shutdown() {
         running = false;
         helper.log(getName(), "INFO", "Shutting down Suricata NIDS module");
-        
+
         if (executor != null && !executor.isShutdown()) {
             executor.shutdown();
         }
-        
+
         helper.log(getName(), "INFO", "Suricata NIDS module shutdown complete");
     }
 
     // Inner classes for parsing Suricata eve.json format
     private static class SuricataEveLog {
         public String timestamp;
+
+        @SerializedName("event_type")
         public String eventType;
+
+        @SerializedName("src_ip")
         public String srcIp;
+
+        @SerializedName("dest_ip")
         public String destIp;
+
+        @SerializedName("src_port")
         public int srcPort;
+
+        @SerializedName("dest_port")
         public int destPort;
+
         public String proto;
         public SuricataAlert alert;
     }
@@ -260,7 +356,10 @@ public class SuricataModule implements PluggableModule {
     private static class SuricataAlert {
         public String action;
         public int gid;
+
+        @SerializedName("signature_id")
         public int signatureId;
+
         public int rev;
         public String signature;
         public String category;
