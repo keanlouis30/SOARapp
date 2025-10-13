@@ -6,22 +6,22 @@ tentative todo:
 
 ### Docker install (rabbitmq)
 
-curl -fsSL https://get.docker.com -o get-docker.sh 
+-curl -fsSL https://get.docker.com -o get-docker.sh 
 
 
-sudo sh get-docker.sh
+-sudo sh get-docker.sh
 
 
 	sudo docker run -d \
   	--hostname rabbit-svr \
   	--name thesis-rmq \
-  	-p 8000:15672 \
+  	-p 15672:15672 \
   	-p 5672:5672 \
   	-e RABBITMQ_DEFAULT_USER=user \
   	-e RABBITMQ_DEFAULT_PASS=password \
   	rabbitmq:3-management
 or
-docker start thesis-rmq (if already command run already used before)
+docker start thesis-rmq (if the command docker run already used before)
 
 ### Install Intellij IDEA community edition
 https://www.jetbrains.com/idea/download/?section=windows
