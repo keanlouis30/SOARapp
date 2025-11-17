@@ -5,13 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.nis1.thesis</groupId>
-    <artifactId>nis1-thesis</artifactId>
+    <artifactId>nis-thesis-sdk-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
+    <name>SOAR Framework SDK</name>
+    <description>Software Development Kit for building pluggable security orchestration modules</description>
 
     <modules>
         <module>nis-thesis-sdk</module>
-        <module>nis1-thesis-core</module>
     </modules>
 
     <properties>

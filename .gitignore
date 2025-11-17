@@ -1,6 +1,3 @@
-# WARP.md contains project-specific AI guidance and should not be committed
-WARP.md
-
 # Maven build artifacts
 target/
 *.jar
